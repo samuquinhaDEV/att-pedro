@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos | Gestão Comercial</title>
+  <style>
+    :root { --bg: #f6f8fa; --card: #ffffff; --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --primary: #2563eb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); }
+    header { background: #111827; color: #fff; padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+    header strong { font-size: 1.05rem; }
+    nav a { color: #d1d5db; text-decoration: none; margin-left: 18px; font-weight: 500; }
+    nav a.ativo, nav a:hover { color: #fff; text-decoration: underline; }
+    main { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    .alerta { padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.95rem; }
+    .alerta-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .alerta-erro { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .campo { display: flex; flex-direction: column; gap: 4px; }
+    input, select, button { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.92rem; }
+    button { background: var(--primary); color: #fff; border: none; cursor: pointer; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 0.92rem; }
+    th { color: var(--muted); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Painel Comercial MVC</strong>
+    <nav>
+      <a th:href="@{/products}">Produtos</a>
+      <a th:href="@{/estoque}">Estoque</a>
+      <a th:href="@{/pedidos}" class="ativo">Pedidos</a>
+    </nav>
+  </header>
+
+  <main>
+    <div th:if="${mensagemSucesso}" class="alerta alerta-ok" th:text="${mensagemSucesso}"></div>
+    <div th:if="${mensagemErro}" class="alerta alerta-erro" th:text="${mensagemErro}"></div>
+
+    <section class="card">
+      <h2>Abrir Pedido</h2>
+      <form th:action="@{/pedidos}" method="post" class="form-row">
+        <div class="campo">
+          <label for="ped-prod">Produto</label>
+          <select id="ped-prod" name="productId" required>
+            <option th:each="p : ${produtos}" th:value="${p.id}"
+                    th:text="${p.nome + ' - R$ ' + p.preco + ' (' + p.status + ')'}"></option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="ped-qtd">Quantidade</label>
+          <input id="ped-qtd" type="number" name="quantidade" min="1" required>
+        </div>
+        <button type="submit">Registrar Pedido</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Lista de Pedidos</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Produto</th>
+            <th>Qtd</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>ID da Fatura</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="ped : ${pedidos}">
+            <td th:text="${ped.id}"></td>
+            <td th:text="${ped.product.nome}"></td>
+            <td th:text="${ped.quantidade}"></td>
+            <td th:text="${'R$ ' + ped.valorTotal}"></td>
+            <td th:text="${ped.status}"></td>
+            <td>
+              <code th:if="${ped.faturaId != null}" th:text="${ped.faturaId}"></code>
+              <span th:if="${ped.faturaId == null}">-</span>
+            </td>
+            <td>
+              <form th:if="${ped.status.name() == 'ABERTO'}"
+                    th:action="@{'/pedidos/' + ${ped.id} + '/fechar'}"
+                    method="post">
+                <button type="submit">Fechar Pedido</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

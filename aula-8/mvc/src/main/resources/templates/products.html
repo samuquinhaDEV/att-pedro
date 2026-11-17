@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos | Gestão Comercial</title>
+  <style>
+    :root { --bg: #f6f8fa; --card: #ffffff; --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --primary: #2563eb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); }
+    header { background: #111827; color: #fff; padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+    header strong { font-size: 1.05rem; }
+    nav a { color: #d1d5db; text-decoration: none; margin-left: 18px; font-weight: 500; }
+    nav a.ativo, nav a:hover { color: #fff; text-decoration: underline; }
+    main { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    .alerta { padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.95rem; }
+    .alerta-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .alerta-erro { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .campo { display: flex; flex-direction: column; gap: 4px; }
+    input, select, button { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.92rem; }
+    button { background: var(--primary); color: #fff; border: none; cursor: pointer; font-weight: 600; }
+    button.secundario { background: #4b5563; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 0.92rem; }
+    th { color: var(--muted); font-weight: 600; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+    .DISPONIVEL { background: #dcfce7; color: #166534; }
+    .INDISPONIVEL { background: #fef3c7; color: #92400e; }
+    .DESCONTINUADO { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Painel Comercial MVC</strong>
+    <nav>
+      <a th:href="@{/products}" class="ativo">Produtos</a>
+      <a th:href="@{/estoque}">Estoque</a>
+      <a th:href="@{/pedidos}">Pedidos</a>
+    </nav>
+  </header>
+
+  <main>
+    <div th:if="${mensagemSucesso}" class="alerta alerta-ok" th:text="${mensagemSucesso}"></div>
+    <div th:if="${mensagemErro}" class="alerta alerta-erro" th:text="${mensagemErro}"></div>
+
+    <section class="card">
+      <h2>Novo Produto</h2>
+      <form th:action="@{/products}" method="post" class="form-row">
+        <div class="campo">
+          <label for="nome">Nome do produto</label>
+          <input id="nome" type="text" name="nome" placeholder="Ex.: Teclado Mecânico" required>
+        </div>
+        <div class="campo">
+          <label for="preco">Preço (R$)</label>
+          <input id="preco" type="number" name="preco" step="0.01" min="0.01" required>
+        </div>
+        <button type="submit">Salvar Produto</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Catálogo Cadastrado</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Produto</th>
+            <th>Preço</th>
+            <th>Saldo</th>
+            <th>Status</th>
+            <th>Descontinuação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="item : ${produtos}">
+            <td th:text="${item.id}"></td>
+            <td th:text="${item.nome}"></td>
+            <td th:text="${'R$ ' + item.preco}"></td>
+            <td th:text="${item.saldoEstoque}"></td>
+            <td>
+              <span class="badge" th:classappend="${item.status.name()}" th:text="${item.status}"></span>
+            </td>
+            <td>
+              <form th:if="${item.status.name() != 'DESCONTINUADO'}"
+                    th:action="@{'/products/' + ${item.id} + '/descontinuar'}"
+                    method="post" style="display:flex; gap:6px;">
+                <select name="perfil" aria-label="Perfil do usuário">
+                  <option th:each="p : ${perfis}" th:value="${p}" th:text="${p}"></option>
+                </select>
+                <button type="submit" class="secundario">Descontinuar</button>
+              </form>
+              <span th:if="${item.status.name() == 'DESCONTINUADO'}" style="color:#6b7280;">Encerrado</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
