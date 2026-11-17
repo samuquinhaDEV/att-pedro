@@ -1,0 +1,56 @@
+sequenceDiagram
+    autonumber
+    actor Operador as Operador de Estoque
+    participant Ctrl as EstoqueController
+    participant Svc as EstoqueService
+    participant Prod as Product (Entidade)
+    participant ProdRepo as ProductRepository
+    participant LancRepo as LancamentoEstoqueRepository
+
+    rect rgb(235, 245, 255)
+        Note over Operador, LancRepo: Fluxo de Entrada de Estoque
+        Operador->>Ctrl: POST /estoque/entrada (productId, quantidade)
+        Ctrl->>Svc: darEntrada(productId, quantidade)
+        Svc->>ProdRepo: findById(productId)
+        ProdRepo-->>Svc: Product
+        Svc->>Prod: adicionarEstoque(quantidade)
+        alt Produto DESCONTINUADO ou quantidade inválida
+            Prod-->>Svc: lança RegraNegocioException
+            Svc-->>Ctrl: propaga erro de negócio
+            Ctrl-->>Operador: redirect /estoque com mensagem de erro
+        else Entrada autorizada
+            Prod->>Prod: saldoEstoque += quantidade
+            opt saldoEstoque saiu de zero
+                Prod->>Prod: status = DISPONIVEL
+            end
+            Svc->>ProdRepo: save(Product)
+            Svc->>LancRepo: save(LancamentoEstoque[ENTRADA])
+            LancRepo-->>Svc: LancamentoEstoque salvo
+            Svc-->>Ctrl: retorno concluído
+            Ctrl-->>Operador: redirect /estoque com confirmação
+        end
+    end
+
+    rect rgb(255, 244, 235)
+        Note over Operador, LancRepo: Fluxo de Saída de Estoque
+        Operador->>Ctrl: POST /estoque/saida (productId, quantidade)
+        Ctrl->>Svc: darSaida(productId, quantidade)
+        Svc->>ProdRepo: findById(productId)
+        ProdRepo-->>Svc: Product
+        Svc->>Prod: baixarEstoque(quantidade)
+        alt Produto DESCONTINUADO, INDISPONIVEL ou saldo insuficiente
+            Prod-->>Svc: lança RegraNegocioException
+            Svc-->>Ctrl: propaga erro de negócio
+            Ctrl-->>Operador: redirect /estoque com mensagem de erro
+        else Saída autorizada
+            Prod->>Prod: saldoEstoque -= quantidade
+            opt saldoEstoque chegou a zero
+                Prod->>Prod: status = INDISPONIVEL
+            end
+            Svc->>ProdRepo: save(Product)
+            Svc->>LancRepo: save(LancamentoEstoque[SAIDA])
+            LancRepo-->>Svc: LancamentoEstoque salvo
+            Svc-->>Ctrl: retorno concluído
+            Ctrl-->>Operador: redirect /estoque com confirmação
+        end
+    end

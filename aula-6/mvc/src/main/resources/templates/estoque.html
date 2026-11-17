@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estoque | Gestão Comercial</title>
+  <style>
+    :root { --bg: #f6f8fa; --card: #ffffff; --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); }
+    header { background: #111827; color: #fff; padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+    header strong { font-size: 1.05rem; }
+    nav a { color: #d1d5db; text-decoration: none; margin-left: 18px; font-weight: 500; }
+    nav a.ativo, nav a:hover { color: #fff; text-decoration: underline; }
+    main { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    .alerta { padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.95rem; }
+    .alerta-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .alerta-erro { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    input, select, button { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.92rem; }
+    button { border: none; color: #fff; font-weight: 600; cursor: pointer; }
+    .btn-entrada { background: #059669; }
+    .btn-saida { background: #dc2626; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 0.92rem; }
+    th { color: var(--muted); font-weight: 600; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+    .DISPONIVEL, .ENTRADA { background: #dcfce7; color: #166534; }
+    .INDISPONIVEL { background: #fef3c7; color: #92400e; }
+    .DESCONTINUADO, .SAIDA { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Painel Comercial MVC</strong>
+    <nav>
+      <a th:href="@{/products}">Produtos</a>
+      <a th:href="@{/estoque}" class="ativo">Estoque</a>
+      <a th:href="@{/pedidos}">Pedidos</a>
+    </nav>
+  </header>
+
+  <main>
+    <div th:if="${mensagemSucesso}" class="alerta alerta-ok" th:text="${mensagemSucesso}"></div>
+    <div th:if="${mensagemErro}" class="alerta alerta-erro" th:text="${mensagemErro}"></div>
+
+    <div class="grid">
+      <section class="card" style="margin-bottom:0;">
+        <h3>Entrada de Mercadoria</h3>
+        <form th:action="@{/estoque/entrada}" method="post">
+          <div class="campo">
+            <label for="entrada-prod">Produto</label>
+            <select id="entrada-prod" name="productId" required>
+              <option th:each="p : ${produtos}" th:value="${p.id}"
+                      th:text="${p.nome + ' | Saldo: ' + p.saldoEstoque + ' [' + p.status + ']'}"></option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="entrada-qtd">Quantidade</label>
+            <input id="entrada-qtd" type="number" name="quantidade" min="1" required>
+          </div>
+          <div class="campo">
+            <label for="entrada-obs">Observação</label>
+            <input id="entrada-obs" type="text" name="observacao" placeholder="Ex.: Nota de compra #12">
+          </div>
+          <button type="submit" class="btn-entrada">Lançar Entrada</button>
+        </form>
+      </section>
+
+      <section class="card" style="margin-bottom:0;">
+        <h3>Saída de Mercadoria</h3>
+        <form th:action="@{/estoque/saida}" method="post">
+          <div class="campo">
+            <label for="saida-prod">Produto</label>
+            <select id="saida-prod" name="productId" required>
+              <option th:each="p : ${produtos}" th:value="${p.id}"
+                      th:text="${p.nome + ' | Saldo: ' + p.saldoEstoque + ' [' + p.status + ']'}"></option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="saida-qtd">Quantidade</label>
+            <input id="saida-qtd" type="number" name="quantidade" min="1" required>
+          </div>
+          <div class="campo">
+            <label for="saida-obs">Observação</label>
+            <input id="saida-obs" type="text" name="observacao" placeholder="Ex.: Ajuste ou retirada">
+          </div>
+          <button type="submit" class="btn-saida">Lançar Saída</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Posição de Estoque</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Produto</th>
+            <th>Saldo Atual</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="p : ${produtos}">
+            <td th:text="${p.id}"></td>
+            <td th:text="${p.nome}"></td>
+            <td th:text="${p.saldoEstoque}"></td>
+            <td>
+              <span class="badge" th:classappend="${p.status.name()}" th:text="${p.status}"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Últimos Lançamentos</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Produto</th>
+            <th>Tipo</th>
+            <th>Qtd</th>
+            <th>Observação</th>
+            <th>Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="l : ${historico}">
+            <td th:text="${l.id}"></td>
+            <td th:text="${l.product.nome}"></td>
+            <td><span class="badge" th:classappend="${l.tipo.name()}" th:text="${l.tipo}"></span></td>
+            <td th:text="${l.quantidade}"></td>
+            <td th:text="${l.observacao}"></td>
+            <td th:text="${l.registradoEm}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

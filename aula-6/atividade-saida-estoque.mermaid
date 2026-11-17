@@ -1,0 +1,31 @@
+flowchart TD
+    Start([Início: Solicitação de Saída]) --> ValQtd{Quantidade > 0?}
+    ValQtd -- Não --> ErrQtd[Lançar erro: quantidade deve ser positiva]
+    ValQtd -- Sim --> Buscar[Carregar produto pelo ID]
+
+    Buscar --> Existe{Produto encontrado?}
+    Existe -- Não --> ErrNotFound[Lançar erro: produto inexistente]
+    Existe -- Sim --> CheckDesc{Status == DESCONTINUADO?}
+
+    CheckDesc -- Sim --> ErrDesc[Bloquear operação: produto descontinuado]
+    CheckDesc -- Não --> CheckDisp{Status == DISPONIVEL e saldo > 0?}
+
+    CheckDisp -- Não --> ErrSemSaldo[Bloquear operação: produto indisponível / sem estoque]
+    CheckDisp -- Sim --> CheckSuf{saldoEstoque >= quantidade?}
+
+    CheckSuf -- Não --> ErrInsuf[Bloquear operação: saldo insuficiente]
+    CheckSuf -- Sim --> Subtrair[Atualizar saldoEstoque = saldoEstoque - quantidade]
+
+    Subtrair --> Zerou{saldoEstoque == 0?}
+    Zerou -- Sim --> MudarIndisp[Alterar status para INDISPONIVEL]
+    Zerou -- Não --> ManterDisp[Manter status como DISPONIVEL]
+
+    MudarIndisp --> Persistir[Persistir Product e registrar LancamentoEstoque SAIDA]
+    ManterDisp --> Persistir
+
+    ErrQtd --> End([Fim])
+    ErrNotFound --> End
+    ErrDesc --> End
+    ErrSemSaldo --> End
+    ErrInsuf --> End
+    Persistir --> End

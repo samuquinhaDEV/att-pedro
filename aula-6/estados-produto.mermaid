@@ -1,0 +1,19 @@
+stateDiagram-v2
+    direction LR
+
+    [*] --> INDISPONIVEL : Cadastro de novo produto (estoque = 0)
+
+    INDISPONIVEL --> DISPONIVEL : Entrada de estoque [saldo saiu de 0 para > 0]
+    DISPONIVEL --> INDISPONIVEL : Saída total de estoque [saldo chegou a 0]
+    DISPONIVEL --> DISPONIVEL : Entrada ou saída parcial [saldo > 0]
+
+    INDISPONIVEL --> DESCONTINUADO : Descontinuar produto [perfil == ADM]
+    DISPONIVEL --> DESCONTINUADO : Descontinuar produto [perfil == ADM]
+
+    DESCONTINUADO --> [*]
+
+    note right of DESCONTINUADO
+        Estado final: não aceita entrada
+        nem saída no módulo de estoque.
+        Apenas ADM pode realizar esta transição.
+    end note
